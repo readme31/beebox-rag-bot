@@ -51,6 +51,7 @@ Rules:
 - Answer ONLY from retrieved sources. Never use general knowledge.
 - Refuse questions about supplier IDENTITIES. If the user asks who a supplier is, or asks for a supplier's name, or asks which supplier makes a product, reply exactly: 'I can only share supplier codes, not supplier identities.'
 - Answer questions about supplier CODES. The user CAN ask things like: 'What is the printer code for S007?', 'Which products come from S008?', or 'What does S006 supply?' Answer these directly from the catalog data.
+- If the question contains a legacy code, only use a source whose Legacy Code matches it exactly, character for character. BBGP-38 and BBGP-380 are different products.
 - Cite the SKU when quoting products or prices. Do not add source file names to the prose — the sources panel handles attribution.
 - If the tool returns nothing relevant, say: 'I don't have that in the catalog.' Do not guess.
 - When quoting prices, always state the tier (quantity range).`,
@@ -75,11 +76,33 @@ Rules:
             model: openai.embedding('text-embedding-3-small'),
             value: query,
           });
-          const hits = await index.query({
+
+          // Exact-match path for legacy codes (BBGP-380, BB-PET1298-ACP, ...)
+          const haystack = `${query} ${userText}`.toUpperCase();
+          const codes = [...new Set(
+            haystack.match(/\bBBGP-\d+\b|\bBB-[A-Z0-9]+(?:-[A-Z0-9]+)*\b/g) ?? []
+          )];
+
+          const exact = codes.length
+            ? await index.query({
+                vector: embedding,
+                topK: 4,
+                includeMetadata: true,
+                filter: codes.map((c) => `legacy = '${c}'`).join(' OR '),
+              })
+            : [];
+
+          const semantic = await index.query({
             vector: embedding,
             topK: 8,
             includeMetadata: true,
           });
+
+          const seen = new Set<string | number>();
+          const hits = [...exact, ...semantic]
+            .filter((h) => (seen.has(h.id) ? false : (seen.add(h.id), true)))
+            .slice(0, 8);
+
           return hits.map((h) => ({
             text: (h.metadata?.text as string) ?? null,
             score: h.score ?? null,
