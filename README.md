@@ -31,6 +31,7 @@ Each chunk is a self-contained product card. Tier quantity ranges are embedded i
    OPENAI_API_KEY=sk-...
    UPSTASH_VECTOR_REST_URL=https://...
    UPSTASH_VECTOR_REST_TOKEN=...
+   SUPPLIER_BLOCKLIST=comma-separated supplier names to block from queries
 3. Place your corpus at data/chunks.jsonl (one JSON object per line)
 4. npm run seed
 5. npm run dev
@@ -45,7 +46,7 @@ Answers well:
 - Show me the cheapest pizza box.
 
 Refuses by design (supplier identity protection):
-- What is the MOQ for a pollen basket from Ucardprint?
+- What is the MOQ for a pollen basket from supplier S009?
 - Who is S007?
 
 Known limitation:
