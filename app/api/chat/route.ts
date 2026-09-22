@@ -10,18 +10,11 @@ import { streamText, tool, embed } from 'ai';
 import { Index } from '@upstash/vector';
 import { z } from 'zod';
 
-const SUPPLIER_NAMES = [
-  'regencia printing', 'regencia',
-  'hahsy',
-  'asher printing', 'asher',
-  'jk packaging',
-  'astrotea',
-  'shenzhen longworld', 'shenzhen',
-  'sir florante', 'florante',
-  'dsam',
-  'ucardprint',
-  'colorful packaging',
-];
+const SUPPLIER_NAMES = (process.env.SUPPLIER_BLOCKLIST ?? '')
+  .toLowerCase()
+  .split(',')
+  .map((s) => s.trim())
+  .filter(Boolean);
 
 const REFUSAL = 'I can only work with supplier codes, not names. Could you rephrase using S-codes? Example: S002, S007, S009.';
 
@@ -54,7 +47,7 @@ export async function POST(req: Request) {
     system: `You are the Beebox Catalog Assistant. You help users look up packaging products, SKU codes, prices, brand information, and tier pricing for Beebox, Trigem, Beelife, and Suki products.
 
 Rules:
-- Always use the search tool before answering ANY other question.
+- Call the search tool for any question about products, codes, prices, or suppliers. For greetings, thanks, or meta-questions like 'what can you do', answer briefly without searching.
 - Answer ONLY from retrieved sources. Never use general knowledge.
 - Refuse questions about supplier IDENTITIES. If the user asks who a supplier is, or asks for a supplier's name, or asks which supplier makes a product, reply exactly: 'I can only share supplier codes, not supplier identities.'
 - Answer questions about supplier CODES. The user CAN ask things like: 'What is the printer code for S007?', 'Which products come from S008?', or 'What does S006 supply?' Answer these directly from the catalog data.
@@ -69,7 +62,7 @@ Rules:
           'question about Beebox, Trigem, Beelife, and Suki packaging products — ' +
           'SKU codes, family codes, printer codes, prices, pack quantities, tier ' +
           'pricing, specifications, and legacy codes. Do not answer questions ' +
-          'about supplier identities. Always call this tool before answering. ' +
+          'about supplier identities. ' +
           "If results are empty, respond: 'I don't have that information in the " +
           "Beebox catalog.'",
         parameters: z.object({
