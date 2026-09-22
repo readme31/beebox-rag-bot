@@ -31,7 +31,9 @@ export async function POST(req: Request) {
   const { messages } = await req.json();
 
   const lastUser = [...messages].reverse().find((m) => m.role === 'user');
-  const userText = (typeof lastUser?.content === 'string' ? lastUser.content : '').toLowerCase();
+  const userText = Array.isArray(lastUser?.content)
+    ? lastUser.content.map((p: any) => p.text ?? '').join(' ').toLowerCase()
+    : (typeof lastUser?.content === 'string' ? lastUser.content : '').toLowerCase();
   const foundName = SUPPLIER_NAMES.find((name) => userText.includes(name));
 
   if (foundName) {
