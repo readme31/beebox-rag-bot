@@ -1,0 +1,19 @@
+node_modules/
+.next/
+out/
+
+# environment and secret files
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+credentials.json
+credentials*.json
+secrets.json
+secrets*.json
+*.secret
+
+*.tsbuildinfo
+.DS_Store
+.vercel
